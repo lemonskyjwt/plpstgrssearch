@@ -77,7 +77,7 @@ Here's the output:
      który        | polish_dict | {który}
      spał         | polish_dict | {spała,spać}
 
-This shows that dict the dict we've just added, the ``polish_dict``, was used and valid lexemes were resolved for each of words used, meaning that search for ``szybki lis`` would've matched ``szybkie lisy``.
+This shows that the dict we've just added, the ``polish_dict``, was used and valid lexemes were resolved for each of words used, meaning that search for ``szybki lis`` would've matched ``szybkie lisy``.
 
 **GOTCHA**: You may need to additionally unaccent your strings if you expect your users to search without diacritics, otherwhise your search my return suprising results, like ``spal`` being interpreted for ``spalić`` instead of ``spać``. Likewise you'll need to develop (likely domain specific) dict of synonyms if you want for searches for, say, ``iphone`` to match ``apple phone``.
 
