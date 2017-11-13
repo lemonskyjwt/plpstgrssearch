@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 IN="pl_PL"
 OUT="polish"
@@ -6,28 +6,34 @@ ENCODING="ISO8859-2"
 
 echo "Generating files for \"$IN\" language"
 
-wget http://src.chromium.org/svn/trunk/deps/third_party/hunspell_dictionaries/$IN.dic
-wget http://src.chromium.org/svn/trunk/deps/third_party/hunspell_dictionaries/$IN.dic_delta
-wget http://src.chromium.org/svn/trunk/deps/third_party/hunspell_dictionaries/$IN.aff -O $IN.affix
+# Massive file we now download, this is because GoogleSource no longer premits
+# downloading raw files to prevent XSS attacks
+wget "https://chromium.googlesource.com/chromium/deps/hunspell_dictionaries/+archive/master.tar.gz" -O - |
+	tar zvv -x "$IN.dic" -x "$IN.dic_delta" -x "$IN.aff"
 
-# Remove first line
-sed -i '' 1d $IN.dic
+mv "$IN.aff" "$IN.affix"
+
+# Remove first line (from docs)
+# > The first  line of the dictionaries (except personal dictionaries) contains
+# > the approximate word count (for optimal hash memory  size).
+sed -i '1d' "$IN.dic"
 
 # Encode as UTF-8
-iconv -f $ENCODING -t utf8 $IN.dic > $IN.utf.dic
-iconv -f $ENCODING -t utf8 $IN.affix > $OUT.affix
+iconv -f "$ENCODING" -t utf8 "$IN.dic" > "$IN.utf.dic"
+iconv -f "$ENCODING" -t utf8 "$IN.affix" > "$OUT.affix"
 
 # Switch back .utf for dic
-rm $IN.dic
-mv $IN.utf.dic $IN.dic
+rm "$IN.dic"
+mv "$IN.utf.dic" "$IN.dic"
 
-# Concat the dic and dic_delta, sort alphabetically and remove the leading blank line (leaves the ending newline intact)
-export LC_ALL='pl_PL.UTF-8'
-cat $IN.dic $IN.dic_delta | sort > $OUT.dict
-sed -i '' 1d $OUT.dict
+# Concat the dic and dic_delta, sort alphabetically and remove the leading
+# blank line (leaves the ending newline intact)
+export LC_ALL="$IN.UTF-8"
+
+# Removes the blank line at the top and sorts files
+sort "$IN.dic" "$IN.dic_delta" | sed '/^$/d' > "$OUT.dict"
 
 # Remove temp files
-rm $IN.dic $IN.dic_delta $IN.affix
-
+rm "$IN.dic" "$IN.dic_delta" "$IN.affix"
 
 echo "Finished!"

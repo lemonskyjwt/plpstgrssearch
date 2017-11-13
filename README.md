@@ -1,11 +1,10 @@
-Short and quick Howto for adding Polish language to PostgreSQL's Search
-=======================================================================
-
+Adding Polish language to PostgreSQL's Search
+=============================================
 
 Obtaining dictionary files
 --------------------------
 
-To add Polish language to your PostgreSQL's instance You'll need three dictionary files:
+To add Polish language to your PostgreSQL's instance, you'll need three dictionary files:
 
 * polish.dict
 * polish.affix
@@ -29,12 +28,12 @@ Now start the ``psql`` utility. You'll need to run three SQLs:
 
 First one will use the files we've generated in previous step to define new dictionary in system:
 
-  CREATE TEXT SEARCH DICTIONARY polish_dict (
-      TEMPLATE = ispell,
-      DictFile = polish,
-      AffFile = polish,
-      StopWords = polish
-  );
+    CREATE TEXT SEARCH DICTIONARY polish_dict (
+        TEMPLATE = ispell,
+        DictFile = polish,
+        AffFile = polish,
+        StopWords = polish
+    );
 
 Second one is pretty straightfoward:
 
