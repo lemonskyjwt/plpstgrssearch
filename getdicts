@@ -6,12 +6,8 @@ ENCODING="ISO8859-2"
 
 echo "Generating files for \"$IN\" language"
 
-# Massive file we now download, this is because GoogleSource no longer premits
-# downloading raw files to prevent XSS attacks
-wget "https://chromium.googlesource.com/chromium/deps/hunspell_dictionaries/+archive/master.tar.gz" -O - |
-	tar zvv -x "$IN.dic" -x "$IN.dic_delta" -x "$IN.aff"
-
-mv "$IN.aff" "$IN.affix"
+wget "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/pl_PL/pl_PL.aff"
+wget "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/pl_PL/pl_PL.dic"
 
 # Remove first line (from docs)
 # > The first  line of the dictionaries (except personal dictionaries) contains
@@ -19,8 +15,8 @@ mv "$IN.aff" "$IN.affix"
 sed -i '1d' "$IN.dic"
 
 # Encode as UTF-8
-iconv -f "$ENCODING" -t utf8 "$IN.dic" > "$IN.utf.dic"
-iconv -f "$ENCODING" -t utf8 "$IN.affix" > "$OUT.affix"
+iconv -f "$ENCODING" -t utf8 -o "$IN.utf.dic" "$IN.dic"
+iconv -f "$ENCODING" -t utf8 -o "$OUT.affix"  "$IN.aff"
 
 # Switch back .utf for dic
 rm "$IN.dic"
@@ -31,10 +27,10 @@ mv "$IN.utf.dic" "$IN.dic"
 export LC_ALL="$IN.UTF-8"
 
 # Removes the blank line at the top and sorts files
-sort "$IN.dic" "$IN.dic_delta" | sed '/^$/d' > "$OUT.dict"
+sort "$IN.dic" | sed '/^$/d' > "$OUT.dict"
 
 # Remove temp files
-rm "$IN.dic" "$IN.dic_delta" "$IN.affix"
+rm "$IN.dic" "$IN.aff"
 
 # Offer to install in Debian/Ubuntu
 if command -v pg_config > /dev/null 2>&1; then
