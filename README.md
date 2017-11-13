@@ -14,7 +14,7 @@ The last one (``polish.stop`` containing stopwords) is already supplied, but the
 
 To get them you'll need to run the ``getdicts`` utility script writen in bash that downloads hunspell dictionary files from the ``src.chromium.org`` and mangles them into dict and affix files suitable for PostgreSQL.
 
-Once this is done, move those files to ``tsearch_data`` dir belonging to your PostgreSQL's installation. In my case this was ``/usr/local/share/postgresql/tsearch_data/``, but you's may be different
+Once this is done, those files should be automatically installed into the ``tsearch_data`` dir belonging to your PostgreSQL's installation. You can find the location of that directory with ``pg_config --sharedir``. If you wish to install for other version of PostgreSQL, you'll have to copy the above listed files to the appropriate ``tsearch_data`` location.
 
 
 Creating search dict and config in PostgreSQL

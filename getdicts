@@ -36,4 +36,12 @@ sort "$IN.dic" "$IN.dic_delta" | sed '/^$/d' > "$OUT.dict"
 # Remove temp files
 rm "$IN.dic" "$IN.dic_delta" "$IN.affix"
 
+# Offer to install in Debian/Ubuntu
+if command -v pg_config > /dev/null 2>&1; then
+	PG_TSEARCH_DATA="$(pg_config --sharedir)/tsearch_data";
+	PG_VERSION=$(pg_config --version);
+	echo "Attempting install for $PG_VERSION to $PG_TSEARCH_DATA";
+	sudo cp "$OUT.stop" "$OUT.affix" "$OUT.dict" "$PG_TSEARCH_DATA"
+fi;
+
 echo "Finished!"
