@@ -1,43 +1,62 @@
 #!/bin/sh
 
-IN="pl_PL"
-OUT="polish"
+# ISO639
+LANG="pl"
+
+# ISO 3166-1 ALPHA-2
+LOCALE="PL"
+
 ENCODING="ISO8859-2"
+IDENTIFIER="${LANG}_${LOCALE}"
 
-echo "Generating files for \"$IN\" language"
+echo "Creating PostgreSQL dictionary files for \"$IDENTIFIER\"";
 
-wget "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/pl_PL/pl_PL.aff"
-wget "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/pl_PL/pl_PL.dic"
+if command -v apt-get > /dev/null; then
+	echo "Debian/Ubuntu detected - using apt";
+	PACKAGE="hunspell-$LANG"
 
-# Remove first line (from docs)
-# > The first  line of the dictionaries (except personal dictionaries) contains
-# > the approximate word count (for optimal hash memory  size).
-sed -i '1d' "$IN.dic"
+  if ! dpkg -V "$PACKAGE"; then
+		echo "Installing through apt-get"
+		sudo apt-get install --yes "$PACKAGE";
+	fi;
 
-# Encode as UTF-8
-iconv -f "$ENCODING" -t utf8 -o "$IN.utf.dic" "$IN.dic"
-iconv -f "$ENCODING" -t utf8 -o "$OUT.affix"  "$IN.aff"
+	for ext in aff dic; do
+		echo "Using local $IDENTIFIER.$ext";
+		SYSTEM_FILE=$(dpkg -L "$PACKAGE" | grep "$IDENTIFIER.$ext");
+		iconv -f "$ENCODING" -t utf8 -o "./$IDENTIFIER.utf8.$ext" "$SYSTEM_FILE";
+	done;
+else
+	for ext in aff dic; do
+		echo "Downloading $IDENTIFIER.$ext";
+		## Download and convert to UTF-8 from $ENCODING
+		wget "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/$IDENTIFIER/$IDENTIFIER.$ext" -O - |
+		iconv -f "$ENCODING" -t utf8 -o "$IDENTIFIER.utf8.$ext";
+	done;
+fi;
 
-# Switch back .utf for dic
-rm "$IN.dic"
-mv "$IN.utf.dic" "$IN.dic"
 
-# Concat the dic and dic_delta, sort alphabetically and remove the leading
-# blank line (leaves the ending newline intact)
-export LC_ALL="$IN.UTF-8"
 
-# Removes the blank line at the top and sorts files
-sort "$IN.dic" | sed '/^$/d' > "$OUT.dict"
-
-# Remove temp files
-rm "$IN.dic" "$IN.aff"
+## also a bit of processing.. 
+# 1. PostgreSQL wants .affix and .dict,
+#    LibreOffice uses .aff and .dic
+# 2. Remove first line of dic (from docs)
+#    > The first  line of the dictionaries (except personal dictionaries) contains
+#    > the approximate word count (for optimal hash memory  size).
+# 3. Removes blank lines and sorts dict
+sed -e '1d' -e '/^$/d' "$IDENTIFIER.utf8.dic" | sort > "$IDENTIFIER.dict"
+mv "$IDENTIFIER.utf8.aff" "$IDENTIFIER.affix"
+rm "$IDENTIFIER.utf8.dic";
 
 # Offer to install in Debian/Ubuntu
-if command -v pg_config > /dev/null 2>&1; then
+if command -v apt-get > /dev/null 2>&1 &&
+ 	command -v pg_config > /dev/null 2>&1;
+then
+
 	PG_TSEARCH_DATA="$(pg_config --sharedir)/tsearch_data";
 	PG_VERSION=$(pg_config --version);
 	echo "Attempting install for $PG_VERSION to $PG_TSEARCH_DATA";
-	sudo cp "$OUT.stop" "$OUT.affix" "$OUT.dict" "$PG_TSEARCH_DATA"
+	sudo cp -v "$LANG.stop" "$IDENTIFIER.affix" "$IDENTIFIER.dict" "$PG_TSEARCH_DATA"
+
 fi;
 
 echo "Finished!"

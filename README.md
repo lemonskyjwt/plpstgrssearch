@@ -12,9 +12,12 @@ To add Polish language to your PostgreSQL's instance, you'll need three dictiona
 
 The last one (``polish.stop`` containing stopwords) is already supplied, but the other two need to be generated.
 
-To get them you'll need to run the ``getdicts`` utility script writen in bash that downloads hunspell dictionary files from the ``src.chromium.org`` and mangles them into dict and affix files suitable for PostgreSQL.
+To get them you'll need to run the ``getdicts`` utility script writen in sh. This will either
 
-Once this is done, those files should be automatically installed into the ``tsearch_data`` dir belonging to your PostgreSQL's installation. You can find the location of that directory with ``pg_config --sharedir``. If you wish to install for other version of PostgreSQL, you'll have to copy the above listed files to the appropriate ``tsearch_data`` location.
+* On Debian or Ubuntu use apt to install the files, and source them from the system, or
+* Download the files from the LibreOffice source repo.
+
+Once this is done, those files should be installed into the ``tsearch_data`` dir belonging to your PostgreSQL's installation. You can find the location of that directory with ``pg_config --sharedir``. If you're on Debian or Ubuntu, you'll be prompted to do this automatially. If you wish to install for other version of PostgreSQL, you'll have to copy the above listed files to the appropriate ``tsearch_data`` location.
 
 
 Creating search dict and config in PostgreSQL
@@ -28,12 +31,14 @@ Now start the ``psql`` utility. You'll need to run three SQLs:
 
 First one will use the files we've generated in previous step to define new dictionary in system:
 
-    CREATE TEXT SEARCH DICTIONARY polish_dict (
+    CREATE TEXT SEARCH DICTIONARY polish_hunspell (
         TEMPLATE = ispell,
         DictFile = polish,
         AffFile = polish,
         StopWords = polish
     );
+		COMMENT ON TEXT SEARCH CONFIGURATION polish
+			IS 'hunspell support for polish language';
 
 Second one is pretty straightfoward:
 
