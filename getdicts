@@ -1,15 +1,33 @@
 #!/bin/sh
 
+if [ -z "$1" -o -z "$2" ]; then
+  cat <<EOF
+getdicts lang2 country language
+
+	lang2    - the two letter abbreviation of the language ISO 3166-1 ALPHA-2
+	country  - the two letter abbreviation of the country ISO 639
+	language - the full name of the language
+
+	ex, getdicts en US english
+EOF
+	exit 1;
+fi
+
 # ISO639
-LANG="pl"
+LANG="$1"
 
 # ISO 3166-1 ALPHA-2
-LOCALE="PL"
+LOCALE="$2"
+
+# Full Language Name
+LANGFULL="$3"
 
 ENCODING="ISO8859-2"
 IDENTIFIER="${LANG}_${LOCALE}"
 
+
 echo "Creating PostgreSQL dictionary files for \"$IDENTIFIER\"";
+mkdir -p ./dist ./temp ./temp/stopwords/;
 
 if command -v apt-get > /dev/null; then
 	echo "Debian/Ubuntu detected - using apt";
@@ -23,18 +41,23 @@ if command -v apt-get > /dev/null; then
 	for ext in aff dic; do
 		echo "Using local $IDENTIFIER.$ext";
 		SYSTEM_FILE=$(dpkg -L "$PACKAGE" | grep "$IDENTIFIER.$ext");
-		iconv -f "$ENCODING" -t utf8 -o "./$IDENTIFIER.utf8.$ext" "$SYSTEM_FILE";
-	done;
+		iconv -f "$ENCODING" -t utf8 -o "./temp/$IDENTIFIER.utf8.$ext" "$SYSTEM_FILE";
+	done
 else
 	for ext in aff dic; do
 		echo "Downloading $IDENTIFIER.$ext";
 		## Download and convert to UTF-8 from $ENCODING
 		wget "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/$IDENTIFIER/$IDENTIFIER.$ext" -O - |
-		iconv -f "$ENCODING" -t utf8 -o "$IDENTIFIER.utf8.$ext";
+		iconv -f "$ENCODING" -t utf8 -o "./temp/$IDENTIFIER.utf8.$ext";
 	done;
-fi;
+fi
 
-
+## Download the stop words if they don't exist
+if [ ! -e "./dist/$LANGFULL.stop" ]; then
+	echo "[NOTICE] No stopwords detected for $LANG"
+	echo "\t downloading from the stopwords-iso project";
+	wget --no-verbose "https://raw.githubusercontent.com/stopwords-iso/stopwords-$LANG/master/stopwords-$LANG.txt" -O "./dist/$LANGFULL.stop";
+fi
 
 ## also a bit of processing.. 
 # 1. PostgreSQL wants .affix and .dict,
@@ -42,10 +65,9 @@ fi;
 # 2. Remove first line of dic (from docs)
 #    > The first  line of the dictionaries (except personal dictionaries) contains
 #    > the approximate word count (for optimal hash memory  size).
-# 3. Removes blank lines and sorts dict
-sed -e '1d' -e '/^$/d' "$IDENTIFIER.utf8.dic" | sort > "$IDENTIFIER.dict"
-mv "$IDENTIFIER.utf8.aff" "$IDENTIFIER.affix"
-rm "$IDENTIFIER.utf8.dic";
+# 3. Removes blank lines (if they exist) and sorts dict
+sed -e '1d' -e '/^$/d' "./temp/$IDENTIFIER.utf8.dic" | sort > "./dist/$IDENTIFIER.dict"
+cp "./temp/$IDENTIFIER.utf8.aff" "./dist/$IDENTIFIER.affix"
 
 # Offer to install in Debian/Ubuntu
 if command -v apt-get > /dev/null 2>&1 &&
@@ -55,7 +77,30 @@ then
 	PG_TSEARCH_DATA="$(pg_config --sharedir)/tsearch_data";
 	PG_VERSION=$(pg_config --version);
 	echo "Attempting install for $PG_VERSION to $PG_TSEARCH_DATA";
-	sudo cp -v "$LANG.stop" "$IDENTIFIER.affix" "$IDENTIFIER.dict" "$PG_TSEARCH_DATA"
+	sudo cp -v                   \
+		"./dist/$LANGFULL.stop"    \
+		"./dist/$IDENTIFIER.affix" \
+		"./dist/$IDENTIFIER.dict"  \
+		"$PG_TSEARCH_DATA";
+	cat <<EOF
+CREATE TEXT SEARCH DICTIONARY ${LANGFULL}_hunspell (
+	TEMPLATE  = ispell,
+	DictFile  = $IDENTIFIER,
+	AffFile   = $IDENTIFIER,
+	StopWords = $LANGFULL
+);
+COMMENT ON TEXT SEARCH DICTIONARY ${LANGFULL}_hunspell
+	IS '[USER ADDED] Hunspell dictionary for $LANGFULL';
+CREATE TEXT SEARCH CONFIGURATION public.polish (
+	COPY = pg_catalog.english
+);
+ALTER TEXT SEARCH CONFIGURATION polish
+	ALTER MAPPING
+	FOR
+		asciiword, asciihword, hword_asciipart,  word, hword, hword_part
+	WITH
+		${LANGFULL}_hunspell, simple;
+EOF
 
 fi;
 
