@@ -10,10 +10,10 @@ To add a language to your PostgreSQL's instance, you'll need three dictionary fi
 * .affix
 * .stop
 
-For polish, the last one (`polish.stop` containing stopwords) is already supplied, but the other two need to be generated.  To get them you'll need to run the `getdicts` shell script. This will obtain the appropriate files as produced by [LibreOffice Dictionaries](https://github.com/LibreOffice/dictionaries)
+To obtain and install these use the `pg_hunspell_install` shell script. This will the local repository or download the appropriate files as produced by [LibreOffice Dictionaries](https://github.com/LibreOffice/dictionaries), and [stopwords-iso](https://github.com/stopwords-iso) project.
 
 * On Debian or Ubuntu the script will use `apt` to install the files, or `dpkg` if they're already installed.
-* Or, if you're not on Debian or Ubuntu, it will source them from the LibreOffice source repo.
+* Or, if you're not on Debian or Ubuntu, it will source them from the proper projects on github.
 
 Once this is done, those files should be installed into the ``tsearch_data`` dir belonging to your PostgreSQL's installation. You can find the location of that directory with ``pg_config --sharedir``. If you're on Debian or Ubuntu, you'll be prompted to do this automatially. If you wish to install for other version of PostgreSQL, you'll have to copy the above listed files to the appropriate ``tsearch_data`` location.
 
@@ -21,9 +21,7 @@ Once this is done, those files should be installed into the ``tsearch_data`` dir
 Creating search dict and config in PostgreSQL
 ---------------------------------------------
 
-After you run the `./getdicts` script the SQL to `CREATE` the DICTIONARY and CONFIGURATION, annoted should be outputted. Simply start psql and run these commands.
-
-
+After you run the `pg_hunspell_install` script the SQL to `CREATE` the DICTIONARY and CONFIGURATION will be outputted, as well as the catalog annotations. Simply start `psql` and run these commands.
 
 Testing
 -------
@@ -57,7 +55,9 @@ This shows that the dict we've just added, the ``polish_dict``, was used and val
 Endnotes
 ========
 
+Repository: https://github.com/EvanCarroll/plpstgrssearch
+
 Please send PR's on Github.
 
-Evan Carroll, 14 Nov 2017
-Rafał Pitoń, 09 Aug 2016
+ * Evan Carroll, 14 Nov 2017
+ * Rafał Pitoń, 09 Aug 2016
