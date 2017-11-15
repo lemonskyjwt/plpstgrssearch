@@ -29,7 +29,7 @@ Testing
 Postgres comes with `ts_debug` function that's useful for testing text search configs. Lets test some random phrase:
 
     SELECT token, dictionary, lexemes FROM ts_debug(
-        'public.polish',
+        'polish',
         'Szybkie brązowe lisy przeskoczyły ponad starym szarym Burkiem który spal.'
     ) where alias <> 'blank';
 
