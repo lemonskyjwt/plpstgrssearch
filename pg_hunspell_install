@@ -27,8 +27,9 @@ IDENTIFIER="${LANG}_${LOCALE}"
 
 
 echo "Creating PostgreSQL dictionary files for \"$IDENTIFIER\"";
-mkdir -p ./dist ./temp ./temp/stopwords/;
+mkdir -p ./dist ./temp;
 
+## Use local files if we can and if they exist.
 if command -v apt-get > /dev/null; then
 	echo "Debian/Ubuntu detected - using apt";
 	PACKAGE="hunspell-$LANG"
@@ -43,19 +44,20 @@ if command -v apt-get > /dev/null; then
 		SYSTEM_FILE=$(dpkg -L "$PACKAGE" | grep "$IDENTIFIER.$ext");
 		iconv -f "$ENCODING" -t utf8 -o "./temp/$IDENTIFIER.utf8.$ext" "$SYSTEM_FILE";
 	done
+
+## Or we can download them..
 else
 	for ext in aff dic; do
-		echo "Downloading $IDENTIFIER.$ext";
-		## Download and convert to UTF-8 from $ENCODING
-		wget "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/$IDENTIFIER/$IDENTIFIER.$ext" -O - |
-		iconv -f "$ENCODING" -t utf8 -o "./temp/$IDENTIFIER.utf8.$ext";
+		if [ ! -e "./temp/$IDENTIFIER.utf8.$ext" ]; then
+			## Download and convert to UTF-8 from $ENCODING
+			wget --no-verbose "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/$IDENTIFIER/$IDENTIFIER.$ext" -O - |
+			iconv -f "$ENCODING" -t utf8 -o "./temp/$IDENTIFIER.utf8.$ext";
+		fi;
 	done;
 fi
 
-## Download the stop words if they don't exist
+## Download the stop words if they don't exist, no one packages them
 if [ ! -e "./dist/$LANGFULL.stop" ]; then
-	echo "[NOTICE] No stopwords detected for $LANG"
-	echo "\t downloading from the stopwords-iso project";
 	wget --no-verbose "https://raw.githubusercontent.com/stopwords-iso/stopwords-$LANG/master/stopwords-$LANG.txt" -O "./dist/$LANGFULL.stop";
 fi
 
