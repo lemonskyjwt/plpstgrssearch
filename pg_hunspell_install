@@ -42,7 +42,7 @@ if command -v apt-get > /dev/null; then
 	for ext in aff dic; do
 		echo "Using local $IDENTIFIER.$ext";
 		SYSTEM_FILE=$(dpkg -L "$PACKAGE" | grep "$IDENTIFIER.$ext");
-		iconv -f "$ENCODING" -t utf8 -o "./temp/$IDENTIFIER.utf8.$ext" "$SYSTEM_FILE";
+		iconv -f "$ENCODING" -t utf8 "$SYSTEM_FILE" > "./temp/$IDENTIFIER.utf8.$ext";
 	done
 
 ## Or we can download them..
@@ -51,7 +51,7 @@ else
 		if [ ! -e "./temp/$IDENTIFIER.utf8.$ext" ]; then
 			## Download and convert to UTF-8 from $ENCODING
 			wget --no-verbose "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/$IDENTIFIER/$IDENTIFIER.$ext" -O - |
-			iconv -f "$ENCODING" -t utf8 -o "./temp/$IDENTIFIER.utf8.$ext";
+			iconv -f "$ENCODING" -t utf8 > "./temp/$IDENTIFIER.utf8.$ext";
 		fi;
 	done;
 fi
