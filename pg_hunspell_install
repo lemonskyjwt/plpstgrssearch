@@ -72,12 +72,12 @@ sed -e '1d' -e '/^$/d' "./temp/$IDENTIFIER.utf8.dic" | sort > "./dist/$IDENTIFIE
 cp "./temp/$IDENTIFIER.utf8.aff" "./dist/$IDENTIFIER.affix"
 
 # Offer to install in Debian/Ubuntu
-if command -v apt-get > /dev/null 2>&1 &&
- 	command -v pg_config > /dev/null 2>&1;
+PG_TSEARCH_DATA="$(pg_config --sharedir)/tsearch_data";
+PG_VERSION=$(pg_config --version);
+read -e -p "Install dictionary for $PG_VERSION? (Y/n)" YN
+if [[ $YN == "y" || $YN == "Y" || $YN == "" ]]
 then
 
-	PG_TSEARCH_DATA="$(pg_config --sharedir)/tsearch_data";
-	PG_VERSION=$(pg_config --version);
 	echo "Attempting install for $PG_VERSION to $PG_TSEARCH_DATA";
 	sudo cp -v                   \
 		"./dist/$LANGFULL.stop"    \
